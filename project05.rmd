@@ -1,0 +1,180 @@
+---
+title: "Project 5 Solutions"
+output:
+  pdf_document: default
+---
+
+```{r, include=F}
+# Run this code chunk first to activate the course Python environment.
+# Do not remove this. It will not show up in your compiled PDF.
+datamine_py()
+library(reticulate)
+
+# Install packages if not already installed.
+list.of.packages <- c("knitr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+# Remove ## from output.
+library(knitr)
+opts_chunk$set(comment = NA)
+
+# Wrap output that is too long using r code chunk option linewidth=80
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+```
+
+## Kevin Choe
+
+## Collaborators: (Collaborators listed here. Include names, which part of the project you gave or sought help with, and how you helped or were helped.)
+## TA help: Summeth Guda
+## Online resources used: (List of links/resources (if any) here. Include web addresses, which part of the project the resource helped with, and how you were helped.)
+
+### Question 1
+
+```{python, linewidth=80}
+from pathlib import Path
+p = Path("/class/datamine/data/stackoverflow/unprocessed/2018.csv")
+size_in_csv = p.stat().st_size
+size_in_csv
+print(f'Size in bytes: {size_in_csv}')
+
+from pathlib import Path
+p = Path("/class/datamine/data/stackoverflow/unprocessed/2018.parquet")
+size_in_parquet = p.stat().st_size
+size_in_parquet
+print(f'Size in bytes: {size_in_parquet}')
+
+from pathlib import Path
+p = Path("/class/datamine/data/stackoverflow/unprocessed/2018.feather")
+size_in_feather = p.stat().st_size
+size_in_feather
+print(f'Size in bytes: {size_in_feather}')
+
+print(f'The parquet file is smaller than the csv by {(size_in_csv-size_in_parquet)/size_in_parquet:.2%}')
+print(f'The feather file is smaller than csv by {(size_in_csv-size_in_feather)/size_in_feather:.2%}')
+
+
+from block_timer.timer import Timer
+import pandas as pd
+with Timer(title="csv") as csv:
+  myDF = pd.read_csv("/class/datamine/data/stackoverflow/unprocessed/2018.csv")
+
+with Timer(title="parquet") as parquet:
+  myDF1 = pd.read_parquet("/class/datamine/data/stackoverflow/unprocessed/2018.parquet")
+
+with Timer(title="feather") as feather:
+  myDF1 = pd.read_feather("/class/datamine/data/stackoverflow/unprocessed/2018.feather")
+  
+print(f'The parquet file is faster than the csv by {(csv.elapsed-parquet.elapsed)/parquet.elapsed:.2%}')
+print(f'The feather file is faster than the csv by {(csv.elapsed-feather.elapsed)/feather.elapsed:.2%}')
+
+
+("/class/datamine/data/stackoverflow/unprocessed/2018.csv")
+with Timer(title="csv") as csv:
+  myDF.to_csv("/scratch/scholar/choe29/2018.csv")
+
+with Timer(title="parquet") as parquet:
+  myDF.to_parquet("/scratch/scholar/choe29/2018.parquet")
+
+with Timer(title="feather") as feather:
+  myDF.to_feather(("/scratch/scholar/choe29/2018.feather"))
+  
+print(f'The parquet file is faster than the csv by {(csv.elapsed-parquet.elapsed)/parquet.elapsed:.2%}')
+print(f'The feather file is faster than the csv by {(csv.elapsed-feather.elapsed)/feather.elapsed:.2%}')
+
+```
+
+### Question 2
+
+```{python, linewidth=80}
+import pandas as pd
+
+myDF = pd.read_csv("/class/datamine/data/stackoverflow/unprocessed/2018.csv")
+
+not_studentsDF = myDF.loc[myDF.loc[:,"Student"] == 'No', :]
+percentage = len(not_studentsDF.loc[:,"Respondent"])/len(myDF.loc[:,"Respondent"])
+
+print(f'{percentage*100}%')
+```
+
+### Question 3
+
+```{python, linewidth=80}
+professions = [p.split(";") for p in not_studentsDF.loc[:, "DevType"].dropna().tolist()]
+
+professions = [p for li in professions for p in li]
+professions = list(set(professions))
+print(professions)
+
+print(len(professions))
+
+
+studentsDF = myDF.loc[(myDF.loc[:,"Student"] == 'No') & (myDF.loc[:,"DevType"].str.contains("Student")), :]
+len(studentsDF)
+
+#There are 20 professions. There are 3723 number of respondents that replied "No" to Student, yet put "Student" as the DevType.
+```
+
+### Question 4
+
+```{python, linewidth=80}
+import matplotlib.pyplot as plt
+import pandas as pd
+import random
+print(f"A random integer between 1 and 100 is {random.randint(1, 101)}")
+females = myDF.loc[(myDF.loc[:, "Gender"]=="Female"), :]
+femaleage=[]
+femaleage = [random.randint(0, len(females)) for i in range(0,100)]
+females = females.iloc[femaleage]
+print(femaleage)
+females.loc[:,"Age"].value_counts().plot.bar()
+print(females)
+plt.show()
+
+import random
+print(f"A random integer between 1 and 100 is {random.randint(1, 101)}")
+males = myDF.loc[(myDF.loc[:, "Gender"]=="Male"), :]
+maleage=[]
+maleage = [random.randint(0, len(males)) for i in range(0,100)]
+males = males.iloc[femaleage]
+print(maleage)
+males.loc[:,"Age"].value_counts().plot.bar()
+print(males)
+plt.show()
+```
+
+### Question 5
+
+```{python, linewidth=80}
+import pandas as pd
+from matplotlib import pyplot as plt
+myDF = pd.read_csv("/class/datamine/data/craigslist/vehicles.csv")
+pd.set_option('display.max_columns', None)
+myDF.head()
+my_values = list(tuple(myDF.loc[:, 'price'].dropna().to_list()))
+my_values.sort()
+plt.plot(my_values[0:-50], color="blue")
+plt.title("Cars vs price")
+plt.xlabel("Price")
+plt.ylabel("Amount of cars")
+plt.show()
+plt.close()
+
+#I created a lineplot of the price from all of the vehicles in our dataset.
+```
+
+## Pledge
+
+By submitting this work I hereby pledge that this is my own, personal work. I've acknowledged in the designated place at the top of this file all sources that I used to complete said work, including but not limited to: online resources, books, and electronic communications. I've noted all collaboration with fellow students and/or TA's. I did not copy or plagiarize another's work.
+
+> As a Boilermaker pursuing academic excellence, I pledge to be honest and true in all that I do. Accountable together – We are Purdue.

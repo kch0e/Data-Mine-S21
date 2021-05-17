@@ -1,0 +1,105 @@
+---
+title: "Project 9 Solutions"
+output:
+  pdf_document: default
+---
+
+```{r, include=F}
+# Run this code chunk first to activate the course Python environment.
+# Do not remove this. It will not show up in your compiled PDF.
+datamine_py()
+library(reticulate)
+
+# Install packages if not already installed.
+list.of.packages <- c("knitr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+# Remove ## from output.
+library(knitr)
+opts_chunk$set(comment = NA)
+
+# Wrap output that is too long using r code chunk option linewidth=80
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+```
+
+## Kevin Choe
+
+## Collaborators: (Collaborators listed here. Include names, which part of the project you gave or sought help with, and how you helped or were helped.)
+## TA help: Summeth Guda
+## Online resources used: (List of links/resources (if any) here. Include web addresses, which part of the project the resource helped with, and how you were helped.)
+
+### Question 1
+
+```{python, linewidth=80}
+import pandas as pd
+```
+
+```{python, linewidth=80}
+import pandas as pd
+beers = pd.read_parquet("/class/datamine/data/beer/beers.parquet")
+breweries = pd.read_parquet("/class/datamine/data/beer/breweries.parquet")
+reviews = pd.read_parquet("/class/datamine/data/beer/reviews.parquet")
+def prepare_data(myDF, min_num_donations):
+  myDF = myDF.loc[myDF.loc[:, "score"].notna(), :]
+  myDF = myDF.loc[myDF.loc[:, "username"].notna(), :]
+  myDF = myDF.loc[myDF.loc[:, "beer_id"].notna(), :]
+  myDF = myDF.reset_index(drop=True)
+  
+  goodusernames = myDF.loc[:, "username"].value_counts() >= min_num_donations
+  goodusernames = goodusernames.loc[goodusernames].index.values.tolist()
+  
+  goodid = myDF.loc[:, "beer_id"].value_counts() >= min_num_donations
+  goodid = goodid.loc[goodid].index.values.tolist()
+  
+  myDF = myDF.loc[myDF.loc[:, "username"].isin(goodusernames) & myDF.loc[:, "beer_id"].isin(goodid), :]
+  return myDF
+
+train = prepare_data(reviews, 1000)
+print(train.shape) # (952105, 10)
+```
+
+### Question 2
+
+```{python, linewidth=80}
+def summer(data):
+  data['standardized_score'] = ((data['score'] - data['score'].mean())/data['score'].std())
+  return data
+  
+myresults = train.groupby(["username"]).apply(summer)
+print(myresults)
+```
+
+### Question 3
+
+```{python, linewidth=80}
+score_matrix = pd.pivot_table(myresults,index = 'beer_id', columns = 'username', values = 'standardized_score')
+
+score_matrix.head()
+
+type(score_matrix)
+score_matrix.shape
+```
+
+### Question 4
+
+```{python, linewidth=80}
+myresults = score_matrix.mean(axis=0)
+score_matrix.fillna(value=myresults)
+```
+
+## Pledge
+
+By submitting this work I hereby pledge that this is my own, personal work. I've acknowledged in the designated place at the top of this file all sources that I used to complete said work, including but not limited to: online resources, books, and electronic communications. I've noted all collaboration with fellow students and/or TA's. I did not copy or plagiarize another's work.
+
+> As a Boilermaker pursuing academic excellence, I pledge to be honest and true in all that I do. Accountable together – We are Purdue.

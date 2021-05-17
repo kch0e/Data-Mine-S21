@@ -1,0 +1,181 @@
+---
+title: "Project 8 Solutions"
+output:
+  pdf_document: default
+---
+
+```{r, include=F}
+# Run this code chunk first to activate the course Python environment.
+# Do not remove this. It will not show up in your compiled PDF.
+datamine_py()
+library(reticulate)
+
+# Install packages if not already installed.
+list.of.packages <- c("knitr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+# Remove ## from output.
+library(knitr)
+opts_chunk$set(comment = NA)
+
+# Wrap output that is too long using r code chunk option linewidth=80
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+```
+
+## Anuj Thakkar
+
+## Collaborators: (Collaborators listed here. Include names, which part of the project you gave or sought help with, and how you helped or were helped.)
+## TA help: None
+## Online resources used: None
+
+### Question 1
+
+```{python, linewidth=80}
+import pandas as pd
+```
+
+```{python, linewidth=80}
+import pandas as pd
+users = pd.read_parquet("/class/datamine/data/yelp/data/parquet/users.parquet")
+reviews = pd.read_parquet("/class/datamine/data/yelp/data/parquet/reviews.parquet")
+def get_friends_data(user_id: str) -> pd.DataFrame:
+  myDF = pd.DataFrame()
+  for i in range(0, users.shape[0]):
+    if (users['user_id'][i] == user_id):
+      mylist = users['friends'][i].split(", ")
+  for j in range(0, users.shape[0]):
+    if (users['user_id'][j] in mylist):
+      myDF = myDF.append(users.iloc[j])
+  return myDF
+  
+print(get_friends_data("ntlvfPzc8eglqvk92iDIAw").shape) # (13,22)
+print(get_friends_data("AY-laIws3S7YXNl_f_D6rQ").shape) # (1, 22)
+print(get_friends_data("xvu8G900tezTzbbfqmTKvA").shape) # (193,22)
+
+```
+
+### Question 2
+
+```{python, linewidth=80}
+def calculate_avg_business_stars(business_id : str) -> float:
+  temp = reviews[reviews["business_id"] == business_id]
+  return sum(temp["stars"]) / len(temp["stars"])
+  
+
+print(calculate_avg_business_stars("f9NumwFMBDn751xgFiRbNA")) # 3.1025641025641026
+
+```
+
+### Question 3
+
+```{python, linewidth=80}
+import matplotlib.pyplot as plt
+
+def visualize_stars_over_time(my_business_id: str):
+  
+  myyears = []
+  for i in range(0,reviews.shape[0]):
+    myyears.append(reviews['date'][i].year)
+  reviews['year'] = myyears
+  averagestars = reviews.groupby(['business_id','year'],as_index=False)['stars'].mean()
+  mydict = {}
+  for i in range(0,averagestars.shape[0]):
+    if averagestars['business_id'][i] == my_business_id:
+      mydict[averagestars['year'][i]] = averagestars['stars'][i]
+  print (mydict.keys())
+  print (mydict.values())
+  plt.plot(mydict.keys(), mydict.values())
+  
+  plt.show()
+  plt.close()
+  return None
+    
+visualize_stars_over_time('RESDUcs7fIiihp38-d6_6g')
+```
+
+### Question 4
+
+```{python, linewidth=80}
+def visualize_stars_over_time(my_business_id: str, granularity: str = "years"):
+  
+  myyearsormonths = []
+  if granularity == "months":
+    for i in range(0,reviews.shape[0]):
+      myyearsormonths.append(reviews['date'][i].month)
+  else:
+    for i in range(0, reviews.shape[0]):
+      myyearsormonths.append(reviews['date'][i].year)
+  reviews['yearormonth'] = myyearsormonths
+  averagestars = reviews.groupby(['business_id','yearormonth'],as_index=False)['stars'].mean()
+  mydict = {}
+  for i in range(0,averagestars.shape[0]):
+    if averagestars['business_id'][i] == my_business_id:
+      mydict[averagestars['yearormonth'][i]] = averagestars['stars'][i]
+  plt.plot(mydict.keys(), mydict.values())
+  
+  plt.show()
+  plt.close()
+    
+visualize_stars_over_time('RESDUcs7fIiihp38-d6_6g', "months")
+```
+
+### Question 5
+
+```{python, linewidth=80}
+def visualize_stars_over_time(*args, **kwargs):
+  
+  granularity = ""
+  businesses = []
+  if (len(kwargs) > 0):
+    granularity = kwargs["granularity"]
+    businesses = args
+  else:
+    granularity = args[len(args)-1]
+    businesses = args[0:len(args)-1]
+  for my_business_id in businesses:
+    myyearsormonths = []
+    if granularity == "months":
+      for i in range(0,reviews.shape[0]):
+        myyearsormonths.append(reviews['date'][i].month)
+    else:
+      for i in range(0, reviews.shape[0]):
+        myyearsormonths.append(reviews['date'][i].year)
+    reviews['yearormonth'] = myyearsormonths
+    averagestars = reviews.groupby(['business_id','yearormonth'],as_index=False)['stars'].mean()
+    mydict = {}
+    for i in range(0,averagestars.shape[0]):
+      if averagestars['business_id'][i] == my_business_id:
+        mydict[averagestars['yearormonth'][i]] = averagestars['stars'][i]
+    plt.plot(mydict.keys(), mydict.values())
+    plt.show()
+    plt.close()
+    
+visualize_stars_over_time("RESDUcs7fIiihp38-d6_6g", "4JNXUYY8wbaaDmk3BPzlWw", "months")
+visualize_stars_over_time("RESDUcs7fIiihp38-d6_6g", "4JNXUYY8wbaaDmk3BPzlWw", "K7lWdNUhCbcnEvI0NhGewg", "months")
+visualize_stars_over_time("RESDUcs7fIiihp38-d6_6g", "4JNXUYY8wbaaDmk3BPzlWw", "K7lWdNUhCbcnEvI0NhGewg", "years")
+
+```
+
+### Question 6
+
+```{python, linewidth=80}
+our_businesses = ["RESDUcs7fIiihp38-d6_6g", "4JNXUYY8wbaaDmk3BPzlWw", "K7lWdNUhCbcnEvI0NhGewg"]
+
+visualize_stars_over_time(*our_businesses, "years")
+```
+## Pledge
+
+By submitting this work I hereby pledge that this is my own, personal work. I've acknowledged in the designated place at the top of this file all sources that I used to complete said work, including but not limited to: online resources, books, and electronic communications. I've noted all collaboration with fellow students and/or TA's. I did not copy or plagiarize another's work.
+
+> As a Boilermaker pursuing academic excellence, I pledge to be honest and true in all that I do. Accountable together – We are Purdue.

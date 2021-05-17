@@ -1,0 +1,188 @@
+---
+title: "Project 4 Solutions"
+output:
+  pdf_document: default
+---
+
+```{r, include=F}
+# Run this code chunk first to activate the course Python environment.
+# Do not remove this. It will not show up in your compiled PDF.
+datamine_py()
+library(reticulate)
+
+# Install packages if not already installed.
+list.of.packages <- c("knitr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+# Remove ## from output.
+library(knitr)
+opts_chunk$set(comment = NA)
+
+# Wrap output that is too long using r code chunk option linewidth=80
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+```
+
+## Kevin Choe
+
+## Collaborators: (Collaborators listed here. Include names, which part of the project you gave or sought help with, and how you helped or were helped.)
+## TA help: Summeth Guda
+## Online resources used: (List of links/resources (if any) here. Include web addresses, which part of the project the resource helped with, and how you were helped.)
+
+### Question 1
+
+```{python, linewidth=80}
+import pandas as pd
+import csv
+myDF = pd.read_csv("/class/datamine/data/craigslist/vehicles.csv")
+myDF.head()
+myDF.shape
+
+#myDF = pd.DataFrame(columns = ['LAT', 'LONG', 'STATE'])
+
+#pair = list(myDF.loc[:'LAT', 'LONG']].dropna().to_records(index=False))
+stateDict = {}
+for my_index, my_row in myDF.iterrows():
+    stateDict[my_row["state"]] = []
+for my_index, my_row in myDF.iterrows():
+    stateDict[my_row["state"]].append( (my_row['lat'],my_row['long'])) 
+print(stateDict.get("in")[0:2])
+```
+
+### Question 2
+
+```{python, linewidth=80}
+for mystate, value in stateDict.items():
+  print(f'{mystate}:')
+  for myindex, mytriple in enumerate(value):
+    if (myindex % 5000 == 0):
+      print(f'Lat: {mytriple[0]} Long: {mytriple[1]}')
+```
+
+### Question 3
+
+```{python, linewidth=80}
+from collections import defaultdict
+import matplotlib.pyplot as plt
+
+my_list = list(myDF.loc[:, ["year", "price",]].dropna().to_records(index=False))
+
+dictionary = defaultdict(list)
+
+for year, price in my_list:
+    dictionary[year].append(float(price))
+
+listyear = []
+listprice = []
+
+import statistics
+for year, price in sorted(dictionary.items()):
+  listyear.append(year)
+  bob = statistics.median(dictionary[year])
+  listprice.append(bob)
+  print(f'Year {year} Price {bob}')
+
+
+plt.bar(listyear, listprice)
+plt.show()
+plt.close()
+```
+
+### Question 4
+
+```{python, linewidth=80}
+dictionary = defaultdict(list)
+
+for year, price in my_list:
+  if (price) < 200000:
+    dictionary[year].append(price)
+
+listyear = []
+listprice = []
+
+import statistics
+for year, price in sorted(dictionary.items()):
+  listyear.append(year)
+  bob = statistics.mean(dictionary[year])
+  listprice.append(bob)
+  print(f'Year {year} Price {bob}')
+
+
+plt.bar(listyear, listprice)
+plt.show()
+plt.close()
+```
+
+### Question 5
+
+```{python, linewidth=80}
+import statistics
+
+my_list = list(myDF.loc[:, ["state", "price"]].dropna().to_records(index=False))
+myIndianaprices = [price for (state, price) in my_list if state.upper() == "IN"]
+statistics.mean(myIndianaprices)
+
+myMidwestprices = [price for (state, price) in my_list if state.upper() == "IN" or state.upper() == "MI" or state.upper() == "IL"]
+statistics.mean(myMidwestprices)
+
+my_list = list(myDF.loc[:, ["manufacturer", "year", "price",]].dropna().to_records(index=False))
+mycarprices = [price for (manufacturer, year, price) in my_list if manufacturer == "honda" and year >= 2010]
+statistics.mean(mycarprices)
+```
+
+### Question 6
+
+```{python, linewidth=80}
+import spacy
+
+# get list of descriptions
+my_list = list(myDF.loc[:, ["description",]].dropna().to_records(index=False))
+my_list = [m[0] for m in my_list]
+
+# load the pre-built spacy model
+nlp = spacy.load("en_core_web_lg")
+
+# apply the model to a description
+doc = nlp(my_list[0])
+
+for doc in my_list[:10]:
+    d = nlp(doc)
+    for entity in d.ents:
+        print(entity.text.encode('ascii', errors='ignore'), entity.label_)
+
+for doc in my_list[:10]:
+    d = nlp(doc)
+    for entity in d.ents:
+        if entity.label_ == "CARDINAL":
+            print(entity.text.encode('ascii', errors='ignore'), entity.label_)
+
+for doc in my_list[:10]:
+    d = nlp(doc)
+    for entity in d.ents:
+        if entity.label_ == "CARDINAL" and len(entity.text) in [7, 8, 10, 11, 12, 14]:
+            print(entity.text.encode('ascii', errors='ignore'), entity.label_)
+
+import re
+pattern = '\(?([0-9]{3})?\)?[-.]?([0-9]{3})[-.]?([0-9]{4})'
+for doc in my_list[:10]:
+    if matches := re.finditer(pattern, doc):
+        for match in matches:
+            print(match.group())
+#It filters through all the data and keeping instances that match the pattern in line 119. The output includes phone numbers that match the pattern.
+```
+
+## Pledge
+
+By submitting this work I hereby pledge that this is my own, personal work. I've acknowledged in the designated place at the top of this file all sources that I used to complete said work, including but not limited to: online resources, books, and electronic communications. I've noted all collaboration with fellow students and/or TA's. I did not copy or plagiarize another's work.
+
+> As a Boilermaker pursuing academic excellence, I pledge to be honest and true in all that I do. Accountable together – We are Purdue.

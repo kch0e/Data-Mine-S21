@@ -1,0 +1,102 @@
+---
+title: "Project 11 Solutions"
+output:
+  pdf_document: default
+---
+
+```{r, include=F}
+# Run this code chunk first to activate the course Python environment.
+# Do not remove this. It will not show up in your compiled PDF.
+datamine_py()
+library(reticulate)
+
+# Install packages if not already installed.
+list.of.packages <- c("knitr")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+# Remove ## from output.
+library(knitr)
+opts_chunk$set(comment = NA)
+
+# Wrap output that is too long using r code chunk option linewidth=80
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+```
+
+## Kevin Choe
+
+## Collaborators: (Collaborators listed here. Include names, which part of the project you gave or sought help with, and how you helped or were helped.)
+## TA help: Summeth Guda
+## Online resources used: (List of links/resources (if any) here. Include web addresses, which part of the project the resource helped with, and how you were helped.)
+
+### Question 1
+
+```{python, linewidth=80}
+import pandas as pd
+```
+
+```{python, linewidth=80}
+import pandas as pd
+import numpy as np
+accidents=pd.DataFrame()
+for i in range(1975,1982):
+  s=str(i)
+  accidents=pd.concat([accidents,pd.read_csv("/class/datamine/data/fars/"+s+"/ACCIDENT.CSV")])
+
+accidents.head
+accidents['YEAR']="19"+accidents['YEAR'].astype(str)
+accidents['YEAR']
+```
+
+### Question 2
+
+```{python, linewidth=80}
+temp=accidents.loc[accidents.loc[:, 'SCH_BUS'] >0, :]
+temp=temp.loc[temp.loc[:, 'DRUNK_DR'] >0, :]
+temp.shape[0]
+```
+
+### Question 3
+
+```{python, linewidth=80}
+temp=temp.groupby(['YEAR'])
+a=temp['YEAR'].count()
+a
+a.idxmax()
+```
+
+### Question 4
+
+```{python, linewidth=80}
+drk=[]
+for i in range(0,7):
+  tmp=accidents.loc[accidents.loc[:,'DRUNK_DR'] == i,:]
+  count=tmp['PERSONS'].mean()
+  drk.append(count)
+drk
+```
+
+### Question 5
+
+```{python, linewidth=80}
+np.unique(accidents['HOUR'])
+accidents['bins']=pd.cut(accidents['HOUR'], bins=[0,6,12,18,24,99],labels=[1,2,3,4,5],include_lowest=True,right=False,duplicates='drop')
+acc=accidents.groupby(['bins'])
+acc['FATALS'].sum()
+acc['FATALS'].mean()
+```
+## Pledge
+
+By submitting this work I hereby pledge that this is my own, personal work. I've acknowledged in the designated place at the top of this file all sources that I used to complete said work, including but not limited to: online resources, books, and electronic communications. I've noted all collaboration with fellow students and/or TA's. I did not copy or plagiarize another's work.
+
+> As a Boilermaker pursuing academic excellence, I pledge to be honest and true in all that I do. Accountable together – We are Purdue.
